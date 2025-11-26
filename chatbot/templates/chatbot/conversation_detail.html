@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Conversation{% endblock %}
+{% block content %}
+<h2>{{ conversation.title|default:"Conversation" }}</h2>
+
+<div id="messages">
+  {% for m in messages %}
+    <div class="message {{ m.role }}">
+      <strong>{{ m.role|capfirst }}:</strong>
+      <div class="text">{{ m.text|linebreaksbr }}</div>
+      <div class="time">{{ m.created_at|date:"SHORT_DATETIME_FORMAT" }}</div>
+    </div>
+  {% empty %}
+    <p>No messages yet.</p>
+  {% endfor %}
+</div>
+
+<form method="post" action="{% url 'add_message' conversation.pk %}">{% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Send</button>
+</form>
+<a href="{% url 'conversations' %}">Back</a>
+{% endblock %}

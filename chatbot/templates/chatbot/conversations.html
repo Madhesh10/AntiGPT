@@ -1,0 +1,19 @@
+<h2>Your Conversations</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.title }}
+    <button type="submit">➕ Start New Chat</button>
+</form>
+
+<ul>
+{% for convo in conversations %}
+    <li>
+        <a href="{% url 'conversation_detail' convo.pk %}">
+            {{ convo.title }}
+        </a>
+    </li>
+{% empty %}
+    <li>No chats yet.</li>
+{% endfor %}
+</ul>
