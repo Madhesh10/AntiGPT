@@ -23,3 +23,9 @@ Thumbs.db
 # Local envs
 .env
 venv/ 
+
+git/
+main/
+venv/
+__pycache__/
+*.sqlite3
