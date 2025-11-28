@@ -1,14 +1,16 @@
+# antiGPTproject/settings.py
 from pathlib import Path
 import os
 
+# BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'your-secret-key-here'
+# SECURITY — use environment variables in production
+SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else []
 
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+# Applications
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -21,8 +23,10 @@ INSTALLED_APPS = [
     'accounts',
 ]
 
+# Middleware (Whitenoise added near the top)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # ← serves static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -51,6 +55,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'antiGPTproject.wsgi.application'
 
+# Database (keep SQLite for now)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -63,26 +68,30 @@ AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
+
+# NOTE: you previously had USE_TZ = False. Keep False if you prefer naive datetimes.
+# If you want timezone-aware datetimes, set USE_TZ = True and ensure your templates / display handle it.
 USE_TZ = False
 
-
 # ----------------------------------------
-# ✅ STATIC FILE SETTINGS (FINAL & CORRECT)
+# STATIC FILE SETTINGS (collectstatic target)
 # ----------------------------------------
-
 STATIC_URL = '/static/'
 
-# Where collectstatic will store files in production
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Use os.path.join to avoid issues on some hosts
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Extra static files during development
+# Optional: during development keep your project-level static folder
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+# Optional whitenoise storage (uncomment if you want compressed manifest storage)
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Login URLs — set to the name used in your urls.py
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = 'conversation_list'
+LOGIN_REDIRECT_URL = 'conversations'   # <-- matches path(..., name='conversations')
 LOGOUT_REDIRECT_URL = 'login'
