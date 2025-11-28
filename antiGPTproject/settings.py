@@ -16,9 +16,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    'chatbot',   # ✅ your existing app
-    'accounts',  # ✅ newly added for Login/Signup
+
+    'chatbot',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -58,21 +58,31 @@ DATABASES = {
     }
 }
 
-AUTH_PASSWORD_VALIDATORS = []  # ✅ no password strength restrictions during dev
+AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = False
 
+
+# ----------------------------------------
+# ✅ STATIC FILE SETTINGS (FINAL & CORRECT)
+# ----------------------------------------
+
 STATIC_URL = '/static/'
+
+# Where collectstatic will store files in production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Extra static files during development
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ✅ Login System Redirect Settings
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = 'conversation_list'
 LOGOUT_REDIRECT_URL = 'login'
