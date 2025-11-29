@@ -1,1 +1,1 @@
-﻿web: gunicorn antiGPTproject.wsgi:application --bind 0.0.0.0:$PORT --log-file -
+web: gunicorn antiGPTproject.wsgi:application --bind 0.0.0.0:$PORT --log-file -
