@@ -20,20 +20,23 @@ def _bool_env(name, default=False):
 
 DEBUG = _bool_env("DEBUG", True)
 
-# ALLOWED_HOSTS: comma-separated in env, otherwise sensible defaults
+# ALLOWED_HOSTS: read from env, otherwise fall back to the Render domain while testing
 _raw_allowed = os.environ.get("ALLOWED_HOSTS", "").strip()
 if _raw_allowed:
     ALLOWED_HOSTS = [h.strip() for h in _raw_allowed.split(",") if h.strip()]
 else:
-    # Development defaults; in production set ALLOWED_HOSTS env var explicitly
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"] if DEBUG else []
+    # Add your Render domain as a fallback so deploys work immediately.
+    # In production prefer setting ALLOWED_HOSTS via an environment variable.
+    ALLOWED_HOSTS = ["antigpt-v15z.onrender.com"] if not DEBUG else ["localhost", "127.0.0.1"]
 
-# CSRF trusted origins (comma-separated), useful when running behind HTTPS proxies
+# CSRF trusted origins (helpful when behind HTTPS proxies)
 _raw_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
 if _raw_csrf:
     CSRF_TRUSTED_ORIGINS = [u.strip() for u in _raw_csrf.split(",") if u.strip()]
 else:
-    CSRF_TRUSTED_ORIGINS = []
+    # Optionally add the Render origin for testing:
+    CSRF_TRUSTED_ORIGINS = ["https://antigpt-v15z.onrender.com"] if not DEBUG else []
+
 
 # When behind a proxy (like Render), trust X-Forwarded-Proto for scheme
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
