@@ -1,91 +1,88 @@
-# antiGPTproject/urls.py  -- diagnostic edition (temporary)
+# antiGPTproject/urls.py
 from django.contrib import admin
 from django.urls import path, include
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import get_user_model
-from django.conf import settings
-from django.db import connection
-import json
+from django.views.decorators.http import require_GET
 
-# TEMP: reset admin password (keeps your previous reset behaviour)
+# Temporary endpoint to create/reset the admin user.
 def reset_admin_password_view(request):
+    """
+    Creates user 'madhesh' if missing and sets password to 'madhesh123'.
+    Visit once, then remove this code and redeploy.
+    """
     User = get_user_model()
     username = "madhesh"
     new_password = "madhesh123"
     try:
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={"email": ""}
-        )
+        user, created = User.objects.get_or_create(username=username, defaults={"email": ""})
         user.set_password(new_password)
         user.is_staff = True
         user.is_superuser = True
+        user.is_active = True
         user.save()
         if created:
-            return HttpResponse(f"Created user '{username}' and set password to '{new_password}'.")
-        return HttpResponse(f"Updated password for existing user '{username}' to '{new_password}'.")
+            return HttpResponse(f"Created user {username} and set password to '{new_password}'.")
+        return HttpResponse(f"Updated password for existing user {username} to '{new_password}'.")
     except Exception as e:
-        return HttpResponse(f"ERROR: {e}", status=500)
+        return HttpResponse(f"Error: {e}", status=500)
 
-# DIAGNOSTIC endpoint to inspect auth state
+
+# Diagnostic endpoint to inspect auth DB state (read-only, safe)
+@require_GET
 def diag_auth_view(request):
-    out = {}
+    """
+    Returns JSON with basic diagnostics:
+      - auth_user table count
+      - whether user 'madhesh' exists
+      - whether password check succeeds (server-side)
+      - AUTH_USER_MODEL and AUTHENTICATION_BACKENDS info (from settings)
+    """
+    from django.db import connection
+    from django.conf import settings
+    User = get_user_model()
+
+    result = {
+        "DATABASE_ENGINE": settings.DATABASES.get("default", {}).get("ENGINE"),
+        "AUTH_USER_MODEL": getattr(settings, "AUTH_USER_MODEL", "auth.User"),
+        "AUTHENTICATION_BACKENDS": getattr(settings, "AUTHENTICATION_BACKENDS", None),
+        "DEBUG": getattr(settings, "DEBUG", None),
+    }
+
     try:
-        # basic settings
-        out["DEBUG"] = bool(getattr(settings, "DEBUG", False))
-        out["AUTH_USER_MODEL"] = getattr(settings, "AUTH_USER_MODEL", "auth.User (default)")
-        out["AUTHENTICATION_BACKENDS"] = list(getattr(settings, "AUTHENTICATION_BACKENDS", []))
-
-        # DB info (default)
-        default_db = settings.DATABASES.get("default", {})
-        out["DATABASE_ENGINE"] = default_db.get("ENGINE")
-        out["DATABASE_NAME"] = default_db.get("NAME")
-
-        # connection info
-        out["db_is_connected"] = connection is not None
-
-        # user info
-        User = get_user_model()
+        # Count users (safe)
+        result["users_count"] = User.objects.count()
         try:
-            users_count = User.objects.count()
-        except Exception as e:
-            users_count = f"EXCEPTION: {e}"
-        out["users_count"] = users_count
-
-        # existence and password check for madhesh
-        username = "madhesh"
-        try:
-            user = User.objects.filter(username=username).first()
-            if not user:
-                out["madhesh_exists"] = False
-                out["madhesh_password_matches"] = False
-                out["madhesh_password_hash"] = None
+            user = User.objects.filter(username="madhesh").first()
+            result["madhesh_exists"] = bool(user)
+            if user:
+                # check password server-side
+                result["madhesh_is_active"] = getattr(user, "is_active", None)
+                result["madhesh_is_staff"] = getattr(user, "is_staff", None)
+                result["madhesh_is_superuser"] = getattr(user, "is_superuser", None)
+                result["madhesh_password_matches_madhesh123"] = user.check_password("madhesh123")
             else:
-                out["madhesh_exists"] = True
-                # do NOT expose full hash in production; we show only the algorithm prefix and length
-                ph = getattr(user, "password", "")
-                out["madhesh_password_hash_preview"] = ph[:60] + ("..." if len(ph) > 60 else "")
-                # check password
-                out["madhesh_password_matches"] = user.check_password("madhesh123")
-                out["madhesh_is_superuser"] = bool(getattr(user, "is_superuser", False))
-                out["madhesh_is_staff"] = bool(getattr(user, "is_staff", False))
+                result["madhesh_is_active"] = None
+                result["madhesh_password_matches_madhesh123"] = False
         except Exception as e:
-            out["madhesh_check_exception"] = str(e)
+            result["user_check_error"] = str(e)
     except Exception as e:
-        return HttpResponse(f"DIAG ERROR: {e}", status=500)
+        # If the DB isn't ready or migrations missing, include error text
+        result["db_error"] = str(e)
 
-    # render JSON for clarity
-    return HttpResponse(json.dumps(out, indent=2), content_type="application/json")
-
+    return JsonResponse(result)
+    
 
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    # TEMP endpoints (remove after diagnostics)
+    # TEMP: reset/create the admin password (visit once)
     path("reset-admin-password/", reset_admin_password_view),
+
+    # TEMP diagnostic endpoint (GET only)
     path("diag-auth/", diag_auth_view),
 
-    # your app includes
+    # your existing app includes
     path("", include("accounts.urls")),
     path("", include("chatbot.urls")),
 ]
