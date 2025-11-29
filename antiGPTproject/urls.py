@@ -1,12 +1,12 @@
 # antiGPTproject/urls.py
-
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 
-# import the diag view we just created
+# diagnostic view (make sure antiGPTproject/diag_auth.py exists)
 from .diag_auth import diag_auth_view
+
 
 def reset_admin_password_view(request):
     """
@@ -19,6 +19,7 @@ def reset_admin_password_view(request):
     try:
         user, created = User.objects.get_or_create(username=username, defaults={"email": ""})
         user.set_password(new_password)
+        user.is_active = True
         user.is_staff = True
         user.is_superuser = True
         user.save()
@@ -28,14 +29,16 @@ def reset_admin_password_view(request):
     except Exception as e:
         return HttpResponse(f"Error: {e}", status=500)
 
+
 urlpatterns = [
+    # admin
     path("admin/", admin.site.urls),
 
-    # TEMP endpoints (remove after you've confirmed login works)
+    # TEMP endpoints: use once then REMOVE for security
     path("reset-admin-password/", reset_admin_password_view),
     path("diag-auth/", diag_auth_view),
 
-    # your app urls — make sure these modules exist
+    # application routes (accounts first so /login/ resolves)
     path("", include("accounts.urls")),
     path("", include("chatbot.urls")),
 ]
