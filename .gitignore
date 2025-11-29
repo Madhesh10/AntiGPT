@@ -1,31 +1,30 @@
-# Virtual env
-venv/
-ENV/
-env/
-
 # Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.sqlite3
 
-# Django
-db.sqlite3
-/staticfiles
-staticfiles/
-media/
-*.log
+# Virtual environment
+venv/
+venv*/
+.env
+.env.*
 
-# OS
+# System files
 .DS_Store
 Thumbs.db
 
-# Local envs
-.env
-venv/ 
+# Ollama / model / large files
+.ollama/
+models/
+*.gguf
+*.bin
+*.ckpt
 
-git/
-main/
-venv/
-__pycache__/
-*.sqlite3
+# static files collected
+staticfiles/
+
+# IDE files
+.vscode/
+.idea/
