@@ -1,9 +1,11 @@
+# chatbot/views.py
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 from .models import Conversation, Message
 from .forms import MessageForm, ConversationForm
+from .ollama_client import generate_with_llm  # this should now call DeepSeek (or your chosen API)
 
 
 # ✅ Conversation List Page (Home)
@@ -40,7 +42,7 @@ def conversation_detail(request, pk):
     })
 
 
-# ✅ Send Message + Get AI Reply from Ollama
+# ✅ Send Message + Get AI Reply (uses generate_with_llm)
 @login_required
 def add_message(request, pk):
     conversation = get_object_or_404(Conversation, pk=pk, user=request.user)
@@ -54,22 +56,16 @@ def add_message(request, pk):
             user_message.role = "user"
             user_message.save()
 
-            # Send user message to Ollama
+            # Call the LLM through your helper (DeepSeek / other)
             try:
-                payload = {
-                    "model": "tinyllama",   # Make sure model exists in your Ollama
-                    "prompt": user_message.text,
-                    "stream": False
-                }
-
-                response = requests.post(
-                    "http://localhost:11434/api/generate",
-                    json=payload,
-                    timeout=60
-                )
-                data = response.json()
-
-                assistant_reply = data.get("response", "").strip()
+                prompt = user_message.text.strip()
+                if not prompt:
+                    assistant_reply = "[No input provided]"
+                else:
+                    # generate_with_llm should return a string (or an error string)
+                    assistant_reply = generate_with_llm(prompt)
+                    if assistant_reply is None:
+                        assistant_reply = "[LLM returned empty response]"
 
             except Exception as e:
                 assistant_reply = f"[Error contacting AI server: {e}]"
