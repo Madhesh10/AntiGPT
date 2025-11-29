@@ -1,34 +1,35 @@
+# chatbot/ollama_client.py
 import os
 import requests
 
 DEEPSEEK_API_KEY = os.getenv("sk-db862d47074f4ee1bac68c9cef5da566")
-DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 
+def generate_with_llm(prompt):
+    if not DEEPSEEK_API_KEY:
+        return "[DeepSeek API key missing]"
 
-def generate_with_llm(prompt: str) -> str:
-    """
-    Calls DeepSeek Chat API and returns model output text.
-    """
+    url = "https://api.deepseek.com/v1/chat/completions"
+    
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ]
+    }
+
     try:
-        headers = {
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
 
-        payload = {
-            "model": "deepseek-chat",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
-        }
+        if response.status_code != 200:
+            return f"[DeepSeek Error {response.status_code}: {response.text}]"
 
-        res = requests.post(DEEPSEEK_URL, json=payload, headers=headers, timeout=30)
-
-        if res.status_code != 200:
-            return f"[DeepSeek Error {res.status_code}: {res.text}]"
-
-        data = res.json()
+        data = response.json()
         return data["choices"][0]["message"]["content"]
 
     except Exception as e:
-        return f"[Error contacting DeepSeek API: {e}]"
+        return f"[DeepSeek Exception: {e}]"
