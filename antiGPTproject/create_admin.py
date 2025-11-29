@@ -1,3 +1,4 @@
+# antiGPTproject/create_admin.py
 from django.contrib.auth import get_user_model
 
 def run():
@@ -8,6 +9,5 @@ def run():
 
     if not User.objects.filter(username=username).exists():
         User.objects.create_superuser(username=username, email=email, password=password)
-        print("Superuser created:", username)
-    else:
-        print("User already exists:", username)
+        return True
+    return False
